@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board.dao.BoardDAO">
+	
+	<!-- 전체게시글 조회 -->
+	<select id="selectAll" parameterType="pagination" resultType="boardVO">
+		select no, companyKor, companyEng
+		from ( select rownum as rnum, B.*
+            from (select * from customer
+			<trim prefix="WHERE" prefixOverrides="AND|OR">
+			 and deleteCheck = 'N'
+				<if test="searchType=='companyKor' and keyword != null and keyword != '' ">
+					AND companyKor like'%${keyword}%'
+				</if>
+				<if test="searchType=='companyEng' and keyword != null and keyword != '' ">
+					AND companyEng like'%${keyword}%'
+				</if>
+				<if test="searchType=='empId' and keyword != null and keyword != '' ">
+					AND empId like'%${keyword}%'
+				</if>
+			</trim>
+		 order by no desc) B
+		  where rownum &lt;= #{startList} + #{listSize} )
+      where
+         rnum &gt; #{startList}
+        
+	</select>
+	
+	<!-- 담당 기업고객 조회 -->
+	<select id="selectMyCustomer" parameterType="pagination" resultType="boardVO">
+		select *
+		from (select rownum as rnum, B.no, B.companyKor, B.companyEng, B.star
+		from (select * from customer c, employee e 
+		where c.empId = e.empId and e.name = (select name from employee where empId = #{id})
+				and deleteCheck = 'N'
+				<if test="searchType=='companyKor' and keyword != null and keyword != '' ">
+					AND companyKor like'%${keyword}%'
+				</if>
+				<if test="searchType=='companyEng' and keyword != null and keyword != '' ">
+					AND companyEng like'%${keyword}%'
+				</if>
+				<if test="searchType=='empId' and keyword != null and keyword != '' ">
+					AND empId like'%${keyword}%'
+				</if>
+		order by c.star desc, c.no desc) B
+		where rownum &lt;= #{startList} + #{listSize} and deleteCheck= 'N')
+		where rnum &gt; #{startList}
+	</select>
+	
+	<!-- 내 고객 게시물 개수 구하기 -->
+	<select id="selectMyCustomerCnt" parameterType="pagination" resultType="int"> 
+		select count(*)
+		from (select rownum as rnum, B.no, B.companyKor, B.companyEng, B.deleteCheck
+		from (select * from customer c, employee e 
+		where c.empId = e.empId and e.name = (select name from employee where empId = #{id})
+		 		and c.deletecheck = 'N'
+				<if test="searchType=='companyKor' and keyword != null and keyword != '' ">
+					AND companyKor like'%${keyword}%'
+				</if>
+				<if test="searchType=='companyEng' and keyword != null and keyword != '' ">
+					AND companyEng like'%${keyword}%'
+				</if>
+				<if test="searchType=='empId' and keyword != null and keyword != '' ">
+					AND empId like'%${keyword}%'
+				</if>
+		) B )
+	</select>
+	
+	
+	<!-- 전체 게시물 개수 구하기 -->
+	<select id="selectBoardListCnt" parameterType="pagination" resultType="int">
+		select count(*)
+		from customer
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND deleteCheck = 'N'
+			<if test="keyword != null and keyword != ''">
+				<if test="searchType=='companyKor'">
+					AND companyKor like'%${keyword}%' 
+				</if>
+				<if test="searchType=='companyEng'">
+					AND companyEng like'%${keyword}%' 
+				</if>
+				<if test="searchType=='empId'">
+					AND empId like'%${keyword}%' 
+				</if>
+			</if>
+		</trim>
+	</select>
+	
+	<!-- 고객 정보 수정 -->
+	<update id="updateModify" parameterType="boardVO">
+		update customer set companyKor = #{companyKor}, companyEng = #{ companyEng },
+		corporationNum = #{corporationNum}, bizRegisNum = #{bizRegisNum}, 
+		representName = #{representName}, homepage = #{homepage},
+		phone = #{phone}, address = #{address}, category = #{category},
+		customerName = #{customerName}, customerPhone = #{customerPhone}
+		where no = #{no}
+	</update>
+	
+	<!-- 상담 이력 새글 등록 -->
+	<insert id="insert" parameterType="boardVO">
+		insert into consult(no, history, consultDate, writer, empId, list_no)
+		  values(#{no}, #{history}, to_date( #{consultDate}, 'yy/MM/dd'), (select name from employee where empid = #{ writer }), #{writer}, consult_seq.nextval)
+	</insert>
+	
+	<!-- 기업 정보 상세  조회(게시물번호) -->
+	<select id="selectByNo" parameterType="int" resultType="boardVO">
+		select c.*, e.name as name, c.empId as id
+		from customer c, employee e
+		where c.empId = e.empId and no = #{no}
+	</select>
+	
+	<!-- 상담 이력 관리 조회 -->
+	<select id="selectConsultByNo" parameterType="int" resultType="boardVO">
+		select c.*, consult.no, consult.history, consult.consultDate, consult.writer, consult.empid as id, consult.list_no
+		from customer c, consult 
+		where c.no = consult.no and c.no =  #{no}
+		order by consult.consultDate asc
+	</select>
+	
+	<!-- 상담 내역 내용 수정 -->
+	<update id="consultUpdate" parameterType="boardVO">
+		update consult
+		set history = #{history, jdbcType=VARCHAR}
+		where list_no = #{list_no} 
+	</update>
+	
+	<!-- 신규 기업고객 정보 등록 -->
+	<insert id="insertRegist" parameterType="boardVO">
+		insert into customer(no, companyKor, companyEng, corporationNum, bizRegisNum, representName, homepage, phone, category, address, empid, customerName, customerPhone)
+		values(customer_seq.nextval, #{companyKor}, #{companyEng}, #{corporationNum}, #{bizRegisNum}, #{representName}, #{homepage}, #{phone}, #{category}, #{address}, #{name}, #{customerName}, #{customerPhone})
+	</insert>
+	
+	<!-- 삭제 요청 표시 -->
+	<update id="deleteCheckBoard" parameterType="int">
+		update customer 
+		set deleteCheck = 'Y'
+		where no = #{boardNo}
+	</update>
+	
+	<!-- 삭제(관리자가 실행) -->
+	<delete id="deleteByNo" parameterType="int">
+		delete customer
+		where no = #{boardNo}
+	</delete>
+	
+	<!-- 삭제 반려 -->
+	<update id="noDelete" parameterType="String">
+		update customer
+		set deleteCheck = 'N'
+		where no = #{customerNo}
+	</update>
+	
+	<!--  즐겨찾기 설정 -->
+	<update id="changeNtoY" parameterType="int">
+		update customer set star = 'Y'
+		where no = #{customerNo}
+	</update>
+	
+	<!--  즐겨찾기 해제 -->
+	<update id="changeYtoN" parameterType="int">
+		update customer set star = 'N'
+		where no = #{customerNo}
+	</update>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

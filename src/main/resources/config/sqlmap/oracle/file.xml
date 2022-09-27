@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="file.dao.FileDAO">
+  	<insert id="insertFileDB" parameterType="fileVO">
+  		<if test="originFileName != null">
+	  		insert into fileDB (no, customer_no, originFileName, storedFileName)
+			values(seq_filedb_no.nextval, (select no from customer where bizRegisNum=#{bizRegisNum}), #{originFileName}, #{storedFileName})
+		</if>
+  	</insert>
+  	
+  	<select id="selectFile" parameterType="int" resultType="fileVO">
+  		<if test="originFileName != null">
+  		select * from fileDB
+  		where customer_no = #{no}
+  		order by no desc
+  		</if>
+  	</select>
+  	
+  	<select id="fileInfo" parameterType="int" resultType="fileVO">
+  		<if test="originFileName != null">
+  		select * from fileDB
+  		where no = #{fileNo}
+  		order by no desc
+  		</if>
+  	</select>
+  	
+  	<delete id="fileDelete" parameterType="String">
+  		delete from fileDB
+  		where no = #{fileNo}
+  	</delete>
+  </mapper>

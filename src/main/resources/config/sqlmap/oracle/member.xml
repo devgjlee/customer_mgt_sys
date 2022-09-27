@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="member.dao.MemberDAO">
+	<!-- 사용자 전체조회 -->
+	<select id="selectAll" parameterType="pagination"
+		resultType="memberVO">
+		select *
+		from ( select rownum as rnum, B.*
+		from (select empId as id, name, type, email, phone, branch from employee
+
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			<if
+				test="searchType=='name' and keyword != null and keyword != '' ">
+				AND name like'%${keyword}%'
+			</if>
+			<if
+				test="searchType=='branch' and keyword != null and keyword != '' ">
+				AND branch like'%${keyword}%'
+			</if>
+			<if
+				test="searchType=='empId' and keyword != null and keyword != '' ">
+				AND empId like'%${keyword}%'
+			</if>
+		</trim>
+
+		order by empId desc) B
+		where rownum &lt;= #{startList} + #{listSize} )
+		where
+		rnum &gt; #{startList}
+	</select>
+
+	<!-- 전체 사용자 수 카운트 -->
+	<select id="selectEmpCnt" parameterType="pagination"
+		resultType="int">
+		select count(*)
+		from ( select rownum as rnum, B.*
+		from (select empId as id, name, type, email, phone, branch from employee
+
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			<if
+				test="searchType=='name' and keyword != null and keyword != '' ">
+				AND name like'%${keyword}%'
+			</if>
+			<if
+				test="searchType=='branch' and keyword != null and keyword != '' ">
+				AND branch like'%${keyword}%'
+			</if>
+			<if
+				test="searchType=='empId' and keyword != null and keyword != '' ">
+				AND empId like'%${keyword}%'
+			</if>
+		</trim>
+		order by empId desc) B )
+	</select>
+	<!-- 지점별 행원 조회 -->
+	<select id="selectMyEmp" parameterType="pagination"
+		resultType="memberVO">
+		select empId as id, name, type, email, phone, branch
+		from ( select
+		rownum as rnum, B.*
+		from (select empId, name, type, email, phone,
+		branch from employee
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			and branch = (select branch from employee where empId = #{id})
+			<if
+				test="searchType=='name' and keyword != null and keyword != '' ">
+				AND name like'%${keyword}%'
+			</if>
+			<if
+				test="searchType=='branch' and keyword != null and keyword != '' ">
+				AND branch like'%${keyword}%'
+			</if>
+			<if
+				test="searchType=='empId' and keyword != null and keyword != '' ">
+				AND empId like'%${keyword}%'
+			</if>
+		</trim>
+		
+		order by empId desc) B
+		where rownum &lt;= #{startList} + #{listSize} )
+		where rnum &gt; #{startList}
+		
+	</select>
+
+	<!-- 지점별 행원 수 카운트 -->
+	<select id="selectMyEmpCnt" parameterType="pagination"
+		resultType="int">
+		select count(*)
+		from ( select rownum as rnum, B.*
+		from (select empId,
+		name, type, email, phone, branch from employee
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			<if
+				test="searchType=='name' and keyword != null and keyword != '' ">
+				AND name like'%${keyword}%'
+			</if>
+			<if
+				test="searchType=='branch' and keyword != null and keyword != '' ">
+				AND branch like'%${keyword}%'
+			</if>
+			<if
+				test="searchType=='empId' and keyword != null and keyword != '' ">
+				AND empId like'%${keyword}%'
+			</if>
+		</trim>
+		order by empId desc) B where branch = (select branch from employee
+		where empId = #{id}))
+
+	</select>
+
+	<!-- 삭제요청 고객 리스트 조회 -->
+	<select id="seleteDeleteY" parameterType="pagination"
+		resultType="boardVO">
+		select *
+		from (select rownum as rnum, B.no, B.companyKor, B.companyEng,
+		B.name, B.deleteCheck
+		from ( select * from customer c, employee e
+		where c.empId = e.empId and e.branch = (select branch from employee where
+		empId = #{id})
+		<if
+			test="searchType=='companyKor' and keyword != null and keyword != '' ">
+			AND companyKor like'%${keyword}%'
+		</if>
+		<if
+			test="searchType=='companyEng' and keyword != null and keyword != '' ">
+			AND companyEng like'%${keyword}%'
+		</if>
+		<if
+			test="searchType=='empId' and keyword != null and keyword != '' ">
+			AND empId like'%${keyword}%'
+		</if>
+		<if
+			test="searchType=='name' and keyword != null and keyword != '' ">
+			AND name like'%${keyword}%'
+		</if>
+		and deleteCheck = 'Y'
+		order by c.star desc, c.no) B where rownum &lt;= #{startList} + #{listSize}
+		)
+		where rnum &gt; #{startList}
+	</select>
+
+	<!-- 삭제 요청 리스트 개수 카운트 -->
+	<select id="selectDeleteListCnt" parameterType="pagination"
+		resultType="int">
+		select count(*)
+		from (select rownum as rnum, B.no, B.companyKor,
+		B.companyEng, B.name, B.deleteCheck
+		from ( select * from customer c, employee e
+		where c.empId = e.empId and e.branch = (select branch from employee where
+		empId = #{id})
+		<if
+			test="searchType=='companyKor' and keyword != null and keyword != '' ">
+			AND companyKor like'%${keyword}%'
+		</if>
+		<if
+			test="searchType=='companyEng' and keyword != null and keyword != '' ">
+			AND companyEng like'%${keyword}%'
+		</if>
+		<if
+			test="searchType=='empId' and keyword != null and keyword != '' ">
+			AND empId like'%${keyword}%'
+		</if>
+		<if
+			test="searchType=='name' and keyword != null and keyword != '' ">
+			AND name like'%${keyword}%'
+		</if>
+		and deleteCheck = 'Y'
+		order by c.star desc, c.no) B )
+	</select>
+
+	<select id="myPageCnt" parameterType="String" resultType="int">
+		select
+		count(*)
+		from (select rownum as rnum, B.no, B.companyKor, B.companyEng,
+		B.deleteCheck
+		from (select * from customer c, employee e
+		where c.empId = e.empId and e.empId = #{id} and c.deletecheck = 'N'
+		)B)
+	</select>
+
+	<!-- 로그인 -->
+	<select id="login" parameterType="memberVO"
+		resultType="memberVO">
+		select empId as id, password, type
+		from employee
+		where empid = #{id} and password = #{password}
+	</select>
+
+	<!-- 이름 조회 -->
+	<select id="selectName" parameterType="String"
+		resultType="String">
+		select name
+		from employee
+		where empid = #{id}
+	</select>
+
+	<!-- 이메일 주소로 아이디 찾기 -->
+	<select id="selectID" parameterType="String" resultType="String">
+		select
+		empid
+		from employee
+		where name = #{name}
+	</select>
+
+	<!-- user type select -->
+	<select id="selectType" parameterType="String"
+		resultType="String">
+		select type
+		from employee
+		where empid = #{key}
+	</select>
+
+	<!-- 행원 정보 상세 조회 -->
+	<select id="selectEmpInfo" parameterType="String"
+		resultType="memberVO">
+		select empId as id, name, type, email, phone, branch,
+		gender
+		from employee
+		where empId = #{id}
+	</select>
+
+	<!-- 담당 고객수 -->
+	<select id="selectMyCustomerCnt" parameterType="String"
+		resultType="int">
+		select count(*)
+		from customer
+		where empId = #{empId}
+	</select>
+
+	<!-- 고객 당 상담 내역 수 -->
+	<select id="selectConsultCnt" parameterType="String"
+		resultType="memberVO">
+		select con.no as customer_no, count(*) as count, c.companyKor from
+		consult con, customer c
+		where con.empId = #{empId} and con.no = c.no
+		group by con.no, c.companyKor
+		order by con.no
+
+		<!-- select no as customer_no, count(*) as count from consult where empId 
+			= #{empId} group by no order by no -->
+	</select>
+
+
+
+	<!-- 신규 행원 등록 -->
+	<insert id="insertNewEmp" parameterType="memberVO">
+		insert into
+		employee(empId, name, password, email, phone, branch, gender)
+		values(#{id}, #{name}, '1111', #{email}, #{phone}, #{branch},
+		#{gender})
+	</insert>
+
+	<!-- 행원 삭제 -->
+	<delete id="deleteEmp" parameterType="String">
+		delete from employee
+		where
+		empId = #{empId}
+	</delete>
+
+
+	<!-- 기존 행원 정보 수정 -->
+	<update id="modifyEmp" parameterType="memberVO">
+		update employee
+		set name =
+		#{name}, email = #{email}, phone = #{phone},
+		branch = #{branch}, gender
+		= #{gender}
+		where empId = #{id}
+	</update>
+
+	<!-- 신규 가입한 행원 삽입 -->
+	<insert id="joinEmp" parameterType="memberVO">
+		insert into employee(empId,
+		name, password, email, phone, branch, gender)
+		values(#{id}, #{name},
+		#{password}, #{email}, #{phone}, #{branch}, #{gender})
+	</insert>
+
+	<!-- 지점 검색 -->
+	<select id="selectBranch" parameterType="pagination"
+		resultType="branchVO">
+		select *
+		from ( select rownum as rnum, B.*
+		from (select *
+		from branch
+		where branchname like '%${keyword}%' or address like
+		'%${keyword}%') B
+		where rownum &lt;= #{startList} + #{listSize} )
+		where
+		rnum &gt; #{startList}
+	</select>
+
+	<select id="selectBranchCnt" parameterType="pagination"
+		resultType="int">
+		select count(*) as count
+		from ( select rownum as rnum, B.*
+		from (select *
+		from branch
+		where branchname like '%${keyword}%' or address
+		like '%${keyword}%') B )
+
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
